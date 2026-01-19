@@ -29,6 +29,14 @@ jobs:
         with:
           lfs: 'true'
 
+      - name: Remove unused
+        working-directory: ${{ github.workspace }}/src
+        run: git rm -r eigen libigl mcut
+
+      - name: Remove unused profiles
+        working-directory: ${{ github.workspace }}/resources/profiles
+        run: git rm -r A* C* E* G* P* Q* T* V*
+
       - name: load cached deps
         uses: actions/cache@v4
         with:
@@ -72,6 +80,12 @@ jobs:
           echo "date=$date" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
           echo "date: ${{ env.date }} version: ${{ env.ver }}"
         shell: pwsh
+
+      - name: Get commit digest on Windows
+        if: inputs.os == 'windows-latest'
+        run: |
+          echo "commit_digest=$("$(git rev-parse HEAD)".Substring(0, 10))"
+            | Out-File -FilePath "$env:GITHUB_ENV" -Encoding utf8 -Append
 
   #   Mac
       - name: Build slicer mac
@@ -130,7 +144,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -G "Visual Studio 17 2022" -A X64 -DBBL_RELEASE_TO_PUBLIC=1 -DBBL_INTERNAL_TESTING=0 -DCMAKE_PREFIX_PATH="${{ github.workspace }}\deps\build\BambuStudio_dep\usr\local" -DCMAKE_INSTALL_PREFIX="../install-dir" -DCMAKE_BUILD_TYPE=Release -DWIN10SDK_PATH="C:/Program Files (x86)/Windows Kits/10/Include/10.0.22000.0"
+          cmake .. -G "Visual Studio 17 2022" -A X64 -DBBL_RELEASE_TO_PUBLIC=1 -DBBL_INTERNAL_TESTING=0 -DCMAKE_PREFIX_PATH="${{ github.workspace }}\deps\build\BambuStudio_dep\usr\local" -DCMAKE_INSTALL_PREFIX="../install-dir" -DCMAKE_BUILD_TYPE=Release -DWIN10SDK_PATH="C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0"
           cmake --build . --target install --config Release -- -m
 
       # - name: Create installer Win
@@ -138,12 +152,6 @@ jobs:
       #   working-directory: ${{ github.workspace }}/build
       #   run: |
       #     cpack -G NSIS
-
-      - name: Pack app
-        if: inputs.os == 'windows-latest'
-        working-directory: ${{ github.workspace }}
-        shell: cmd
-        run: '"C:/Program Files/7-Zip/7z.exe" a -tzip BambuStudio_Windows_${{ env.ver }}_portable.zip ${{ github.workspace }}/install-dir'
 
       # - name: Pack PDB
       #   if: inputs.os == 'windows-latest'
@@ -155,8 +163,8 @@ jobs:
         if: inputs.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: BambuStudio_Windows_${{ env.ver }}_portable
-          path: ${{ github.workspace }}/BambuStudio_Windows_${{ env.ver }}_portable.zip
+          name: BambuStudio_Windows_${{ env.ver }}_${{ env.commit_digest }}
+          path: ${{ github.workspace }}/install-dir/*
 
 
   # Ubuntu
