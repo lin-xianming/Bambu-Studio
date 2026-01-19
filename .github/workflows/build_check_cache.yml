@@ -25,7 +25,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: 'true'
+          repository: lin-xianming/bambu-prusa-orca
+          ref: bambu/2.4.0
+          token: ${{ secrets.REPO_TOKEN }}
         
       - name: set outputs
         id: set_outputs
